@@ -18,6 +18,14 @@ func DefaultLogger() *logrus.Entry {
 	return logrus.NewEntry(log)
 }
 
+func GetLogger(ctx context.Context) *logrus.Entry {
+	le, ok := ctx.Value(loggerCtxKey{}).(*logrus.Entry)
+	if !ok {
+		le = DefaultLogger()
+	}
+	return le
+}
+
 func WithLogger(ctx context.Context, log *logrus.Entry) context.Context {
 	return context.WithValue(ctx, loggerCtxKey{}, log)
 }

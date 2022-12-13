@@ -1,6 +1,8 @@
 package api
 
 import (
+	"context"
+	"encoding/json"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -36,5 +38,27 @@ func NewServer(params *Params) *http.Server {
 	return &http.Server{
 		Addr:    params.Addr,
 		Handler: apiRouter,
+	}
+}
+
+func RespondWithJSON(w http.ResponseWriter, status int, payload interface{}) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	return json.NewEncoder(w).Encode(payload)
+}
+func WriteError(ctx context.Context, w http.ResponseWriter, status int, message string) {
+	log := logger.GetLogger(ctx)
+
+	err := RespondWithJSON(w, status, APIError{Message: message})
+	if err != nil {
+		log.WithError(err).Error("write response error")
+	}
+}
+func WriteSuccessful(ctx context.Context, w http.ResponseWriter, payload interface{}) {
+	log := logger.GetLogger(ctx)
+
+	err := RespondWithJSON(w, http.StatusOK, payload)
+	if err != nil {
+		log.WithError(err).Error("write response error")
 	}
 }
