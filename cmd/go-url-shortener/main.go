@@ -9,13 +9,6 @@ import (
 	"github.com/perfectgentlemande/go-url-shortener-example/internal/storage/dburl"
 )
 
-func resolve(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("resolve"))
-}
-func shorten(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("shorten"))
-}
-
 func main() {
 	ctx := context.Background()
 	log := logger.DefaultLogger()
