@@ -32,7 +32,7 @@ func NewServer(params *Params) *http.Server {
 
 	apiRouter := chi.NewRouter()
 	apiRouter.Use(logger.NewLoggingMiddleware(params.Log))
-	apiRouter.Get("/:url", ctrl.resolve)
+	apiRouter.Get("/{id}", ctrl.resolve)
 	apiRouter.Post("/api/v1", ctrl.shorten)
 
 	return &http.Server{
