@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/perfectgentlemande/go-url-shortener-example/api/helpers"
+	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/base62"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/go-redis/redis/v8"
@@ -67,7 +68,7 @@ func (c *Controller) Shorten(ctx *fiber.Ctx) error {
 
 	var id string
 	if body.CustomShort == "" {
-		id = helpers.Base62Encode(rand.Uint64())
+		id = base62.Encode(rand.Uint64())
 	} else {
 		id = body.CustomShort
 	}
