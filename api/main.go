@@ -28,9 +28,14 @@ func main() {
 	rInr := database.CreateClient(1)
 	defer rInr.Close()
 
+	// Implement Rate limiting
+	r2 := database.CreateClient(1)
+	defer r2.Close()
+
 	c := &routes.Controller{
-		r:    r,
-		rInr: rInr,
+		R:    r,
+		RInr: rInr,
+		R2:   r2,
 	}
 
 	app := fiber.New()

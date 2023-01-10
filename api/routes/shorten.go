@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/perfectgentlemande/go-url-shortener-example/api/database"
 	"github.com/perfectgentlemande/go-url-shortener-example/api/helpers"
 
 	"github.com/asaskevich/govalidator"
@@ -37,15 +36,11 @@ func (c *Controller) Shorten(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "cannot parse JSON"})
 	}
 
-	// Implement Rate limiting
-	r2 := database.CreateClient(1)
-	defer r2.Close()
-
-	val, err := r2.Get(dbCtx, ctx.IP()).Result()
-	limit, _ := r2.TTL(dbCtx, ctx.IP()).Result()
+	val, err := c.R2.Get(dbCtx, ctx.IP()).Result()
+	limit, _ := c.R2.TTL(dbCtx, ctx.IP()).Result()
 
 	if err == redis.Nil {
-		_ = r2.Set(dbCtx, ctx.IP(), os.Getenv("API_QUOTA"), 30*60*time.Second).Err()
+		_ = c.R2.Set(dbCtx, ctx.IP(), os.Getenv("API_QUOTA"), 30*60*time.Second).Err()
 	} else if err == nil {
 		valInt, _ := strconv.Atoi(val)
 		if valInt <= 0 {
@@ -77,10 +72,7 @@ func (c *Controller) Shorten(ctx *fiber.Ctx) error {
 		id = body.CustomShort
 	}
 
-	r := database.CreateClient(0)
-	defer r.Close()
-
-	val, _ = r.Get(dbCtx, id).Result()
+	val, _ = c.R.Get(dbCtx, id).Result()
 
 	if val != "" {
 		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
@@ -92,7 +84,7 @@ func (c *Controller) Shorten(ctx *fiber.Ctx) error {
 		body.Expiry = 24
 	}
 
-	err = r.Set(dbCtx, id, body.URL, body.Expiry*3600*time.Second).Err()
+	err = c.R.Set(dbCtx, id, body.URL, body.Expiry*3600*time.Second).Err()
 
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -115,7 +107,7 @@ func (c *Controller) Shorten(ctx *fiber.Ctx) error {
 		XRateLimitReset: 30,
 	}
 
-	remainingQuota, err := r2.Decr(dbCtx, ctx.IP()).Result()
+	remainingQuota, err := c.R2.Decr(dbCtx, ctx.IP()).Result()
 
 	resp.XRateRemaining = int(remainingQuota)
 	resp.XRateRemaining = int(limit / time.Nanosecond / time.Minute)
