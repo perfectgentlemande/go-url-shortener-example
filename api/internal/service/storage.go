@@ -2,6 +2,6 @@ package service
 
 import "context"
 
-type SlugStorage interface {
+type URLStorage interface {
 	GetByID(ctx context.Context, id string) (string, error)
 }
