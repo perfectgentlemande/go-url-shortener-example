@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/perfectgentlemande/go-url-shortener-example/api/database"
+	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/database"
 	"github.com/perfectgentlemande/go-url-shortener-example/api/routes"
 
 	"github.com/gofiber/fiber/v2"
