@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"log"
+	"os"
 
 	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/database"
+	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/database2/dburl"
 	"github.com/perfectgentlemande/go-url-shortener-example/api/routes"
 
 	"github.com/gofiber/fiber/v2"
@@ -32,10 +35,21 @@ func main() {
 	r2 := database.CreateClient(1)
 	defer r2.Close()
 
+	urlStorage, err := dburl.NewDatabase(context.TODO(), &dburl.Config{
+		Addr:     os.Getenv("DB_ADDR"),
+		Password: os.Getenv("DB_PASS"),
+		No:       0,
+	})
+	if err != nil {
+		log.Printf("cannot create URL Storage: %s\n", err)
+		return
+	}
+
 	c := &routes.Controller{
-		R:    r,
-		RInr: rInr,
-		R2:   r2,
+		UrlStorage: &urlStorage,
+		R:          r,
+		RInr:       rInr,
+		R2:         r2,
 	}
 
 	app := fiber.New()
