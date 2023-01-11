@@ -3,6 +3,7 @@ package dburl
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/service"
@@ -33,10 +34,19 @@ func (d *Database) GetByID(ctx context.Context, id string) (string, error) {
 			return "", service.ErrNoSuchID
 		}
 
-		return "", fmt.Errorf("cannot get URL by ID: %w", err)
+		return "", fmt.Errorf("get query failed: %w", err)
 	}
 
 	return value, nil
+}
+
+func (d *Database) Set(ctx context.Context, id, url string, expiration time.Duration) error {
+	err := d.db.Set(ctx, id, url, expiration).Err()
+	if err != nil {
+		return fmt.Errorf("set query failed: %w", err)
+	}
+
+	return nil
 }
 
 func (d *Database) Close() error {

@@ -7,7 +7,6 @@ import (
 
 type Controller struct {
 	UrlStorage service.URLStorage
-	R          *redis.Client
 	RInr       *redis.Client
 	R2         *redis.Client
 }

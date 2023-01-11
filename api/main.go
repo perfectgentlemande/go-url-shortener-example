@@ -47,7 +47,6 @@ func main() {
 
 	c := &routes.Controller{
 		UrlStorage: &urlStorage,
-		R:          r,
 		RInr:       rInr,
 		R2:         r2,
 	}

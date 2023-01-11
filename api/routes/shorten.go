@@ -73,8 +73,7 @@ func (c *Controller) Shorten(ctx *fiber.Ctx) error {
 		id = body.CustomShort
 	}
 
-	val, _ = c.R.Get(dbCtx, id).Result()
-
+	val, _ = c.UrlStorage.GetByID(dbCtx, id)
 	if val != "" {
 		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"error": "URL Custom short is already in use",
@@ -85,8 +84,7 @@ func (c *Controller) Shorten(ctx *fiber.Ctx) error {
 		body.Expiry = 24
 	}
 
-	err = c.R.Set(dbCtx, id, body.URL, body.Expiry*3600*time.Second).Err()
-
+	err = c.UrlStorage.Set(dbCtx, id, body.URL, body.Expiry*3600*time.Second)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Unable to connect to server",
