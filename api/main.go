@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/database"
+	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/database2/dbip"
 	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/database2/dburl"
 	"github.com/perfectgentlemande/go-url-shortener-example/api/routes"
 
@@ -25,9 +26,6 @@ func main() {
 		log.Fatal("Could not load environment file.")
 	}
 
-	r := database.CreateClient(0)
-	defer r.Close()
-
 	rInr := database.CreateClient(1)
 	defer rInr.Close()
 
@@ -45,8 +43,19 @@ func main() {
 		return
 	}
 
+	ipStorage, err := dbip.NewDatabase(context.TODO(), &dbip.Config{
+		Addr:     os.Getenv("DB_ADDR"),
+		Password: os.Getenv("DB_PASS"),
+		No:       1,
+	})
+	if err != nil {
+		log.Printf("cannot create IP Storage: %s\n", err)
+		return
+	}
+
 	c := &routes.Controller{
 		UrlStorage: &urlStorage,
+		IpStorage:  &ipStorage,
 		RInr:       rInr,
 		R2:         r2,
 	}

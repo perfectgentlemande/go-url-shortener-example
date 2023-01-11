@@ -84,7 +84,7 @@ func (c *Controller) Shorten(ctx *fiber.Ctx) error {
 		body.Expiry = 24
 	}
 
-	err = c.UrlStorage.Set(dbCtx, id, body.URL, body.Expiry*3600*time.Second)
+	err = c.UrlStorage.SetByID(dbCtx, id, body.URL, body.Expiry*3600*time.Second)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Unable to connect to server",

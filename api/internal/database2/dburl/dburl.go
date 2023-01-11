@@ -40,7 +40,7 @@ func (d *Database) GetByID(ctx context.Context, id string) (string, error) {
 	return value, nil
 }
 
-func (d *Database) Set(ctx context.Context, id, url string, expiration time.Duration) error {
+func (d *Database) SetByID(ctx context.Context, id, url string, expiration time.Duration) error {
 	err := d.db.Set(ctx, id, url, expiration).Err()
 	if err != nil {
 		return fmt.Errorf("set query failed: %w", err)
