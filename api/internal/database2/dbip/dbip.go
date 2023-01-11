@@ -45,8 +45,22 @@ func (d *Database) GetRequestsCountByIP(ctx context.Context, ip string) (int, er
 
 	return val, nil
 }
-func (d *Database) SetRequestsCountByIP(ctx context.Context, id, url string, expiration time.Duration) error {
+func (d *Database) SetAPIQuotaByIP(ctx context.Context, ip string, quota int, expiration time.Duration) error {
+	err := d.db.Set(ctx, ip, quota, expiration).Err()
+	if err != nil {
+		return fmt.Errorf("set query failed: %w", err)
+	}
+
 	return nil
+}
+
+func (d *Database) GetTTLByIP(ctx context.Context, ip string) (time.Duration, error) {
+	ttl, err := d.db.TTL(ctx, ip).Result()
+	if err != nil {
+		return 0, fmt.Errorf("ttl query failed: %w", err)
+	}
+
+	return ttl, nil
 }
 
 func (d *Database) Close() error {

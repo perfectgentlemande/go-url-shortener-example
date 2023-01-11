@@ -34,14 +34,27 @@ func (c *Controller) Shorten(ctx *fiber.Ctx) error {
 	dbCtx := context.TODO()
 	body := &request{}
 
+	quotaStr := os.Getenv("API_QUOTA")
+	quota, err := strconv.Atoi(quotaStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "wrong API_QUOTA"})
+	}
+
 	if err := ctx.BodyParser(&body); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "cannot parse JSON"})
 	}
 
+	limit, err := c.IpStorage.GetTTLByIP(dbCtx, ctx.IP())
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot get TTL"})
+	}
+
 	valInt, err := c.IpStorage.GetRequestsCountByIP(dbCtx, ctx.IP())
-	limit, _ := c.R2.TTL(dbCtx, ctx.IP()).Result()
 	if errors.Is(err, service.ErrNoSuchItem) {
-		_ = c.R2.Set(dbCtx, ctx.IP(), os.Getenv("API_QUOTA"), 30*60*time.Second).Err()
+		err = c.IpStorage.SetAPIQuotaByIP(dbCtx, ctx.IP(), quota, 30*60*time.Second)
+		if err != nil {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot set api quota for IP"})
+		}
 	} else if err == nil {
 		if valInt <= 0 {
 			return ctx.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
@@ -72,7 +85,7 @@ func (c *Controller) Shorten(ctx *fiber.Ctx) error {
 		id = body.CustomShort
 	}
 
-	val, _ = c.UrlStorage.GetByID(dbCtx, id)
+	val, _ := c.UrlStorage.GetByID(dbCtx, id)
 	if val != "" {
 		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"error": "URL Custom short is already in use",

@@ -12,5 +12,6 @@ type URLStorage interface {
 
 type IPStorage interface {
 	GetRequestsCountByIP(ctx context.Context, ip string) (int, error)
-	SetRequestsCountByIP(ctx context.Context, id, url string, expiration time.Duration) error
+	SetAPIQuotaByIP(ctx context.Context, ip string, quota int, expiration time.Duration) error
+	GetTTLByIP(ctx context.Context, ip string) (time.Duration, error)
 }
