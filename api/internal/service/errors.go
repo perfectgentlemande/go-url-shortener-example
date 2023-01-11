@@ -2,4 +2,4 @@ package service
 
 import "errors"
 
-var ErrNoSuchID = errors.New("no such id")
+var ErrNoSuchItem = errors.New("no such item")

@@ -11,6 +11,6 @@ type URLStorage interface {
 }
 
 type IPStorage interface {
-	GetRequestsCountByIP(ctx context.Context, ip string) (string, error)
+	GetRequestsCountByIP(ctx context.Context, ip string) (int, error)
 	SetRequestsCountByIP(ctx context.Context, id, url string, expiration time.Duration) error
 }

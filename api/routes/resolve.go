@@ -15,7 +15,7 @@ func (c *Controller) Resolve(ctx *fiber.Ctx) error {
 
 	value, err := c.UrlStorage.GetByID(dbCtx, url)
 	if err != nil {
-		if errors.Is(err, service.ErrNoSuchID) {
+		if errors.Is(err, service.ErrNoSuchItem) {
 			return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "short-url not found in db"})
 		}
 

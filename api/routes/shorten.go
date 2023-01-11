@@ -2,6 +2,7 @@ package routes
 
 import (
 	"context"
+	"errors"
 	"math/rand"
 	"os"
 	"strconv"
@@ -9,9 +10,9 @@ import (
 
 	"github.com/perfectgentlemande/go-url-shortener-example/api/helpers"
 	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/base62"
+	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/service"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/go-redis/redis/v8"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -37,13 +38,11 @@ func (c *Controller) Shorten(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "cannot parse JSON"})
 	}
 
-	val, err := c.R2.Get(dbCtx, ctx.IP()).Result()
+	valInt, err := c.IpStorage.GetRequestsCountByIP(dbCtx, ctx.IP())
 	limit, _ := c.R2.TTL(dbCtx, ctx.IP()).Result()
-
-	if err == redis.Nil {
+	if errors.Is(err, service.ErrNoSuchItem) {
 		_ = c.R2.Set(dbCtx, ctx.IP(), os.Getenv("API_QUOTA"), 30*60*time.Second).Err()
 	} else if err == nil {
-		valInt, _ := strconv.Atoi(val)
 		if valInt <= 0 {
 			return ctx.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
 				"error":            "Rate limit exceeded",

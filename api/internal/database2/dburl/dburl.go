@@ -31,7 +31,7 @@ func (d *Database) GetByID(ctx context.Context, id string) (string, error) {
 	value, err := d.db.Get(ctx, id).Result()
 	if err != nil {
 		if err == redis.Nil {
-			return "", service.ErrNoSuchID
+			return "", service.ErrNoSuchItem
 		}
 
 		return "", fmt.Errorf("get query failed: %w", err)
