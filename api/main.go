@@ -42,6 +42,7 @@ func main() {
 		log.Printf("cannot create URL Storage: %s\n", err)
 		return
 	}
+	defer urlStorage.Close()
 
 	ipStorage, err := dbip.NewDatabase(context.TODO(), &dbip.Config{
 		Addr:     os.Getenv("DB_ADDR"),
@@ -52,6 +53,7 @@ func main() {
 		log.Printf("cannot create IP Storage: %s\n", err)
 		return
 	}
+	defer ipStorage.Close()
 
 	c := &routes.Controller{
 		UrlStorage: &urlStorage,
