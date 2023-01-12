@@ -37,6 +37,11 @@ func (c *Controller) Shorten(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "cannot parse JSON"})
 	}
 
+	// check if the input is an actual URL
+	if !govalidator.IsURL(body.URL) {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid URL"})
+	}
+
 	limit, err := c.IpStorage.GetTTLByIP(dbCtx, ctx.IP())
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot get TTL"})
@@ -55,12 +60,6 @@ func (c *Controller) Shorten(ctx *fiber.Ctx) error {
 				"rate_limit_reset": limit / time.Nanosecond / time.Minute,
 			})
 		}
-	}
-
-	// check if the input is an actual URL
-
-	if !govalidator.IsURL(body.URL) {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid URL"})
 	}
 
 	// check for domain error

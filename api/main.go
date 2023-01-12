@@ -6,9 +6,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/database"
-	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/database2/dbip"
-	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/database2/dburl"
+	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/database/dbip"
+	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/database/dburl"
 	"github.com/perfectgentlemande/go-url-shortener-example/api/routes"
 
 	"github.com/gofiber/fiber/v2"
@@ -27,12 +26,10 @@ func main() {
 		log.Fatal("Could not load environment file.")
 	}
 
-	rInr := database.CreateClient(1)
-	defer rInr.Close()
-
+	addr, pass := os.Getenv("DB_ADDR"), os.Getenv("DB_PASS")
 	urlStorage, err := dburl.NewDatabase(context.TODO(), &dburl.Config{
-		Addr:     os.Getenv("DB_ADDR"),
-		Password: os.Getenv("DB_PASS"),
+		Addr:     addr,
+		Password: pass,
 		No:       0,
 	})
 	if err != nil {
@@ -43,8 +40,8 @@ func main() {
 
 	// Implement Rate limiting
 	ipStorage, err := dbip.NewDatabase(context.TODO(), &dbip.Config{
-		Addr:     os.Getenv("DB_ADDR"),
-		Password: os.Getenv("DB_PASS"),
+		Addr:     addr,
+		Password: pass,
 		No:       1,
 	})
 	if err != nil {
