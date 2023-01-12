@@ -29,10 +29,6 @@ func main() {
 	rInr := database.CreateClient(1)
 	defer rInr.Close()
 
-	// Implement Rate limiting
-	r2 := database.CreateClient(1)
-	defer r2.Close()
-
 	urlStorage, err := dburl.NewDatabase(context.TODO(), &dburl.Config{
 		Addr:     os.Getenv("DB_ADDR"),
 		Password: os.Getenv("DB_PASS"),
@@ -44,6 +40,7 @@ func main() {
 	}
 	defer urlStorage.Close()
 
+	// Implement Rate limiting
 	ipStorage, err := dbip.NewDatabase(context.TODO(), &dbip.Config{
 		Addr:     os.Getenv("DB_ADDR"),
 		Password: os.Getenv("DB_PASS"),
@@ -59,7 +56,6 @@ func main() {
 		UrlStorage: &urlStorage,
 		IpStorage:  &ipStorage,
 		RInr:       rInr,
-		R2:         r2,
 	}
 
 	app := fiber.New()

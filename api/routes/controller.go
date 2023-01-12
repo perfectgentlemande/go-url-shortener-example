@@ -9,5 +9,4 @@ type Controller struct {
 	UrlStorage service.URLStorage
 	IpStorage  service.IPStorage
 	RInr       *redis.Client
-	R2         *redis.Client
 }

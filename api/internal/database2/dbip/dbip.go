@@ -35,7 +35,7 @@ func (d *Database) GetRequestsCountByIP(ctx context.Context, ip string) (int, er
 			return 0, service.ErrNoSuchItem
 		}
 
-		return 0, fmt.Errorf("get query failed: %w", err)
+		return 0, fmt.Errorf("cannot execute get query: %w", err)
 	}
 
 	val, err := strconv.Atoi(strVal)
@@ -48,16 +48,25 @@ func (d *Database) GetRequestsCountByIP(ctx context.Context, ip string) (int, er
 func (d *Database) SetAPIQuotaByIP(ctx context.Context, ip string, quota int, expiration time.Duration) error {
 	err := d.db.Set(ctx, ip, quota, expiration).Err()
 	if err != nil {
-		return fmt.Errorf("set query failed: %w", err)
+		return fmt.Errorf("cannot execute set query: %w", err)
 	}
 
 	return nil
 }
 
+func (d *Database) DecrAPIQuotaByIP(ctx context.Context, ip string) (int64, error) {
+	remaining, err := d.db.Decr(ctx, ip).Result()
+	if err != nil {
+		return 0, fmt.Errorf("cannot execute decr query: %w", err)
+	}
+
+	return remaining, nil
+}
+
 func (d *Database) GetTTLByIP(ctx context.Context, ip string) (time.Duration, error) {
 	ttl, err := d.db.TTL(ctx, ip).Result()
 	if err != nil {
-		return 0, fmt.Errorf("ttl query failed: %w", err)
+		return 0, fmt.Errorf("cannot execute ttl query: %w", err)
 	}
 
 	return ttl, nil

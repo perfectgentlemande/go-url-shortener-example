@@ -34,8 +34,8 @@ func (c *Controller) Shorten(ctx *fiber.Ctx) error {
 	dbCtx := context.TODO()
 	body := &request{}
 
-	quotaStr := os.Getenv("API_QUOTA")
-	quota, err := strconv.Atoi(quotaStr)
+	defaultAPIQuotaStr := os.Getenv("API_QUOTA")
+	defaultAPIQuota, err := strconv.Atoi(defaultAPIQuotaStr)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "wrong API_QUOTA"})
 	}
@@ -51,7 +51,7 @@ func (c *Controller) Shorten(ctx *fiber.Ctx) error {
 
 	valInt, err := c.IpStorage.GetRequestsCountByIP(dbCtx, ctx.IP())
 	if errors.Is(err, service.ErrNoSuchItem) {
-		err = c.IpStorage.SetAPIQuotaByIP(dbCtx, ctx.IP(), quota, 30*60*time.Second)
+		err = c.IpStorage.SetAPIQuotaByIP(dbCtx, ctx.IP(), defaultAPIQuota, 30*60*time.Second)
 		if err != nil {
 			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot set api quota for IP"})
 		}
@@ -99,31 +99,24 @@ func (c *Controller) Shorten(ctx *fiber.Ctx) error {
 	err = c.UrlStorage.SetByID(dbCtx, id, body.URL, body.Expiry*3600*time.Second)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Unable to connect to server",
+			"error": "Cannot set URL by ID",
 		})
 	}
 
-	defaultAPIQuotaStr := os.Getenv("API_QUOTA")
+	remainingQuota, err := c.IpStorage.DecrAPIQuotaByIP(dbCtx, ctx.IP())
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Unable to connect to server",
+			"error": "Cannot decrAPI quota",
 		})
 	}
-	defaultApiQuota, _ := strconv.Atoi(defaultAPIQuotaStr)
+
 	resp := response{
 		URL:             body.URL,
-		CustomShort:     "",
+		CustomShort:     os.Getenv("DOMAIN") + "/" + id,
 		Expiry:          body.Expiry,
-		XRateRemaining:  defaultApiQuota,
-		XRateLimitReset: 30,
+		XRateRemaining:  int(remainingQuota),
+		XRateLimitReset: limit / time.Nanosecond / time.Minute,
 	}
-
-	remainingQuota, err := c.R2.Decr(dbCtx, ctx.IP()).Result()
-
-	resp.XRateRemaining = int(remainingQuota)
-	resp.XRateRemaining = int(limit / time.Nanosecond / time.Minute)
-
-	resp.CustomShort = os.Getenv("DOMAIN") + "/" + id
 
 	return ctx.Status(fiber.StatusOK).JSON(resp)
 }
