@@ -5,7 +5,6 @@ import (
 	"errors"
 	"math/rand"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/perfectgentlemande/go-url-shortener-example/api/helpers"
@@ -34,12 +33,6 @@ func (c *Controller) Shorten(ctx *fiber.Ctx) error {
 	dbCtx := context.TODO()
 	body := &request{}
 
-	defaultAPIQuotaStr := os.Getenv("API_QUOTA")
-	defaultAPIQuota, err := strconv.Atoi(defaultAPIQuotaStr)
-	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "wrong API_QUOTA"})
-	}
-
 	if err := ctx.BodyParser(&body); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "cannot parse JSON"})
 	}
@@ -51,7 +44,7 @@ func (c *Controller) Shorten(ctx *fiber.Ctx) error {
 
 	valInt, err := c.IpStorage.GetRequestsCountByIP(dbCtx, ctx.IP())
 	if errors.Is(err, service.ErrNoSuchItem) {
-		err = c.IpStorage.SetAPIQuotaByIP(dbCtx, ctx.IP(), defaultAPIQuota, 30*60*time.Second)
+		err = c.IpStorage.SetAPIQuotaByIP(dbCtx, ctx.IP(), c.DefaultAPIQuota, 30*60*time.Second)
 		if err != nil {
 			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot set api quota for IP"})
 		}

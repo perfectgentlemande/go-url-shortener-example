@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/database"
 	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/database2/dbip"
@@ -52,9 +53,17 @@ func main() {
 	}
 	defer ipStorage.Close()
 
+	defaultAPIQuotaStr := os.Getenv("API_QUOTA")
+	defaultAPIQuota, err := strconv.Atoi(defaultAPIQuotaStr)
+	if err != nil {
+		log.Printf("wrong API_QUOTA: %d: %s", defaultAPIQuota, err)
+		return
+	}
+
 	c := &routes.Controller{
-		UrlStorage: &urlStorage,
-		IpStorage:  &ipStorage,
+		UrlStorage:      &urlStorage,
+		IpStorage:       &ipStorage,
+		DefaultAPIQuota: defaultAPIQuota,
 	}
 
 	app := fiber.New()

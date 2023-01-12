@@ -5,6 +5,7 @@ import (
 )
 
 type Controller struct {
-	UrlStorage service.URLStorage
-	IpStorage  service.IPStorage
+	UrlStorage      service.URLStorage
+	IpStorage       service.IPStorage
+	DefaultAPIQuota int
 }
