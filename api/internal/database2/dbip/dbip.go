@@ -72,6 +72,15 @@ func (d *Database) GetTTLByIP(ctx context.Context, ip string) (time.Duration, er
 	return ttl, nil
 }
 
+func (d *Database) IncrRequestCounter(ctx context.Context) error {
+	err := d.db.Incr(ctx, "counter").Err()
+	if err != nil {
+		return fmt.Errorf("cannot execute incr query: %w", err)
+	}
+
+	return nil
+}
+
 func (d *Database) Close() error {
 	return d.db.Close()
 }

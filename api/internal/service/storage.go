@@ -15,4 +15,5 @@ type IPStorage interface {
 	SetAPIQuotaByIP(ctx context.Context, ip string, quota int, expiration time.Duration) error
 	DecrAPIQuotaByIP(ctx context.Context, ip string) (int64, error)
 	GetTTLByIP(ctx context.Context, ip string) (time.Duration, error)
+	IncrRequestCounter(ctx context.Context) error
 }

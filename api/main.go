@@ -55,7 +55,6 @@ func main() {
 	c := &routes.Controller{
 		UrlStorage: &urlStorage,
 		IpStorage:  &ipStorage,
-		RInr:       rInr,
 	}
 
 	app := fiber.New()

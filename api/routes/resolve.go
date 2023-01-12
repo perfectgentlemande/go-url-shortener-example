@@ -22,7 +22,10 @@ func (c *Controller) Resolve(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal error"})
 	}
 
-	_ = c.RInr.Incr(dbCtx, "counter")
+	err = c.IpStorage.IncrRequestCounter(dbCtx)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Cannot increment request counter"})
+	}
 
 	return ctx.Redirect(value, http.StatusMovedPermanently)
 }
