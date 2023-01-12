@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"context"
 	"errors"
+	"fmt"
 	"math/rand"
 	"os"
 	"time"
@@ -14,6 +14,12 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/gofiber/fiber/v2"
 )
+
+// APIError defines model for APIError.
+type APIError struct {
+	// Error message
+	Message string `json:"message"`
+}
 
 type request struct {
 	URL         string        `json:"url"`
@@ -29,42 +35,40 @@ type response struct {
 	XRateLimitReset time.Duration `json:"rate_limit_reset"`
 }
 
-func (c *Controller) Shorten(ctx *fiber.Ctx) error {
-	dbCtx := context.TODO()
+func (c *Controller) Shorten(fCtx *fiber.Ctx) error {
+	ctx := fCtx.Context()
 	body := &request{}
 
-	if err := ctx.BodyParser(&body); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "cannot parse JSON"})
+	if err := fCtx.BodyParser(&body); err != nil {
+		return fCtx.Status(fiber.StatusBadRequest).JSON(APIError{Message: "cannot parse JSON"})
 	}
 
 	// check if the input is an actual URL
 	if !govalidator.IsURL(body.URL) {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid URL"})
+		return fCtx.Status(fiber.StatusBadRequest).JSON(APIError{Message: "Invalid URL"})
 	}
 
-	limit, err := c.IpStorage.GetTTLByIP(dbCtx, ctx.IP())
+	limit, err := c.IpStorage.GetTTLByIP(ctx, fCtx.IP())
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot get TTL"})
+		return fCtx.Status(fiber.StatusInternalServerError).JSON(APIError{Message: "cannot get TTL"})
 	}
 
-	valInt, err := c.IpStorage.GetRequestsCountByIP(dbCtx, ctx.IP())
+	valInt, err := c.IpStorage.GetRequestsCountByIP(ctx, fCtx.IP())
 	if errors.Is(err, service.ErrNoSuchItem) {
-		err = c.IpStorage.SetAPIQuotaByIP(dbCtx, ctx.IP(), c.DefaultAPIQuota, 30*60*time.Second)
+		err = c.IpStorage.SetAPIQuotaByIP(ctx, fCtx.IP(), c.DefaultAPIQuota, 30*60*time.Second)
 		if err != nil {
-			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot set api quota for IP"})
+			return fCtx.Status(fiber.StatusInternalServerError).JSON(APIError{Message: "cannot set api quota for IP"})
 		}
 	} else if err == nil {
 		if valInt <= 0 {
-			return ctx.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
-				"error":            "Rate limit exceeded",
-				"rate_limit_reset": limit / time.Nanosecond / time.Minute,
-			})
+			return fCtx.Status(fiber.StatusServiceUnavailable).JSON(
+				APIError{Message: fmt.Sprintf("Rate limit exceeded, rate_limit_reset: %d", limit/time.Nanosecond/time.Minute)})
 		}
 	}
 
 	// check for domain error
 	if !helpers.RemoveDomainError(body.URL) {
-		return ctx.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{"error": "Can't do that :)"})
+		return fCtx.Status(fiber.StatusServiceUnavailable).JSON(APIError{Message: "Can't do that :)"})
 	}
 
 	// enforce HTTPS, SSL
@@ -77,29 +81,23 @@ func (c *Controller) Shorten(ctx *fiber.Ctx) error {
 		id = body.CustomShort
 	}
 
-	val, _ := c.UrlStorage.GetByID(dbCtx, id)
+	val, _ := c.UrlStorage.GetByID(ctx, id)
 	if val != "" {
-		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"error": "URL Custom short is already in use",
-		})
+		return fCtx.Status(fiber.StatusForbidden).JSON(APIError{Message: "URL Custom short is already in use"})
 	}
 
 	if body.Expiry == 0 {
 		body.Expiry = 24
 	}
 
-	err = c.UrlStorage.SetByID(dbCtx, id, body.URL, body.Expiry*3600*time.Second)
+	err = c.UrlStorage.SetByID(ctx, id, body.URL, body.Expiry*3600*time.Second)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Cannot set URL by ID",
-		})
+		return fCtx.Status(fiber.StatusInternalServerError).JSON(APIError{Message: "Cannot set URL by ID"})
 	}
 
-	remainingQuota, err := c.IpStorage.DecrAPIQuotaByIP(dbCtx, ctx.IP())
+	remainingQuota, err := c.IpStorage.DecrAPIQuotaByIP(ctx, fCtx.IP())
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Cannot decrAPI quota",
-		})
+		return fCtx.Status(fiber.StatusInternalServerError).JSON(APIError{Message: "Cannot decrAPI quota"})
 	}
 
 	resp := response{
@@ -110,5 +108,5 @@ func (c *Controller) Shorten(ctx *fiber.Ctx) error {
 		XRateLimitReset: limit / time.Nanosecond / time.Minute,
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(resp)
+	return fCtx.Status(fiber.StatusOK).JSON(resp)
 }

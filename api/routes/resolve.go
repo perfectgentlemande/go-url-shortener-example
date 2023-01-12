@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"context"
 	"errors"
 	"net/http"
 
@@ -9,23 +8,23 @@ import (
 	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/service"
 )
 
-func (c *Controller) Resolve(ctx *fiber.Ctx) error {
-	dbCtx := context.TODO()
-	url := ctx.Params("url")
+func (c *Controller) Resolve(fCtx *fiber.Ctx) error {
+	ctx := fCtx.Context()
+	url := fCtx.Params("url")
 
-	value, err := c.UrlStorage.GetByID(dbCtx, url)
+	value, err := c.UrlStorage.GetByID(ctx, url)
 	if err != nil {
 		if errors.Is(err, service.ErrNoSuchItem) {
-			return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "short-url not found in db"})
+			return fCtx.Status(fiber.StatusNotFound).JSON(APIError{Message: "short-url not found in db"})
 		}
 
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal error"})
+		return fCtx.Status(fiber.StatusInternalServerError).JSON(APIError{Message: "Internal error"})
 	}
 
-	err = c.IpStorage.IncrRequestCounter(dbCtx)
+	err = c.IpStorage.IncrRequestCounter(ctx)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Cannot increment request counter"})
+		return fCtx.Status(fiber.StatusInternalServerError).JSON(APIError{Message: "Cannot increment request counter"})
 	}
 
-	return ctx.Redirect(value, http.StatusMovedPermanently)
+	return fCtx.Redirect(value, http.StatusMovedPermanently)
 }
