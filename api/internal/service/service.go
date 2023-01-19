@@ -47,10 +47,10 @@ func (s *Service) Shorten(ctx context.Context, ip, url string) (string, error) {
 	}
 
 	valInt, err := s.ipStorage.GetRequestsCountByIP(ctx, ip)
-	if errors.Is(err, service.ErrNoSuchItem) {
-		err = c.IpStorage.SetAPIQuotaByIP(ctx, fCtx.IP(), c.DefaultAPIQuota, 30*60*time.Second)
+	if errors.Is(err, ErrNoSuchItem) {
+		err = s.ipStorage.SetAPIQuotaByIP(ctx, ip, s.defaultAPIQuota, 30*60*time.Second)
 		if err != nil {
-			return fCtx.Status(fiber.StatusInternalServerError).JSON(APIError{Message: "cannot set api quota for IP"})
+			return "", fmt.Errorf("cannot set api quota for IP: %w", err)
 		}
 	} else if err == nil {
 		if valInt <= 0 {
