@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/gofiber/fiber"
 	"github.com/perfectgentlemande/go-url-shortener-example/api/helpers"
 	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/base62"
 )
@@ -40,7 +39,7 @@ func (s *Service) Resolve(ctx context.Context, id string) (string, error) {
 	return value, nil
 }
 
-func (s *Service) Shorten(ctx context.Context, ip, url, customShort string) (string, error) {
+func (s *Service) Shorten(ctx context.Context, ip, url, customShort string, expiry time.Duration) (string, error) {
 	limit, err := s.ipStorage.GetTTLByIP(ctx, ip)
 	if err != nil {
 		return "", fmt.Errorf("cannot get TTL by IP: %w", err)
@@ -78,18 +77,18 @@ func (s *Service) Shorten(ctx context.Context, ip, url, customShort string) (str
 		return "", ErrAlreadyInUse
 	}
 
-	if body.Expiry == 0 {
-		body.Expiry = 24
+	if expiry == 0 {
+		expiry = 24
 	}
 
-	err = s.urlStorage.SetByID(ctx, id, url, body.Expiry*3600*time.Second)
+	err = s.urlStorage.SetByID(ctx, id, url, expiry*3600*time.Second)
 	if err != nil {
-		return fCtx.Status(fiber.StatusInternalServerError).JSON(APIError{Message: "Cannot set URL by ID"})
+		return "", fmt.Errorf("cannot set URL by ID: %w")
 	}
 
 	remainingQuota, err := s.ipStorage.DecrAPIQuotaByIP(ctx, ip)
 	if err != nil {
-		return "", fmt.Errorf("cannot decrement API quote by IP: %w", err)
+		return "", fmt.Errorf("cannot decrement API quota by IP: %w", err)
 	}
 
 	return id, nil
