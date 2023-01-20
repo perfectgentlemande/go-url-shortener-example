@@ -39,27 +39,22 @@ func (s *Service) Resolve(ctx context.Context, id string) (string, error) {
 	return value, nil
 }
 
-func (s *Service) Shorten(ctx context.Context, ip, url, customShort string, expiry time.Duration) (string, error) {
+func (s *Service) Shorten(ctx context.Context, ip, url, customShort string, expiry time.Duration) (string, int64, error) {
 	limit, err := s.ipStorage.GetTTLByIP(ctx, ip)
 	if err != nil {
-		return "", fmt.Errorf("cannot get TTL by IP: %w", err)
+		return "", 0, fmt.Errorf("cannot get TTL by IP: %w", err)
 	}
 
 	valInt, err := s.ipStorage.GetRequestsCountByIP(ctx, ip)
 	if errors.Is(err, ErrNoSuchItem) {
 		err = s.ipStorage.SetAPIQuotaByIP(ctx, ip, s.defaultAPIQuota, 30*60*time.Second)
 		if err != nil {
-			return "", fmt.Errorf("cannot set api quota for IP: %w", err)
+			return "", 0, fmt.Errorf("cannot set api quota for IP: %w", err)
 		}
 	} else if err == nil {
 		if valInt <= 0 {
-			return "", ErrRateLimitExceeded
+			return "", 0, ErrRateLimitExceeded
 		}
-	}
-
-	// check for domain error
-	if !helpers.RemoveDomainError(url) {
-		return "", ErrCantDoThat
 	}
 
 	// enforce HTTPS, SSL
@@ -74,7 +69,7 @@ func (s *Service) Shorten(ctx context.Context, ip, url, customShort string, expi
 
 	val, _ := s.urlStorage.GetByID(ctx, id)
 	if val != "" {
-		return "", ErrAlreadyInUse
+		return "", 0, ErrAlreadyInUse
 	}
 
 	if expiry == 0 {
@@ -83,13 +78,13 @@ func (s *Service) Shorten(ctx context.Context, ip, url, customShort string, expi
 
 	err = s.urlStorage.SetByID(ctx, id, url, expiry*3600*time.Second)
 	if err != nil {
-		return "", fmt.Errorf("cannot set URL by ID: %w")
+		return "", 0, fmt.Errorf("cannot set URL by ID: %w")
 	}
 
 	remainingQuota, err := s.ipStorage.DecrAPIQuotaByIP(ctx, ip)
 	if err != nil {
-		return "", fmt.Errorf("cannot decrement API quota by IP: %w", err)
+		return "", 0, fmt.Errorf("cannot decrement API quota by IP: %w", err)
 	}
 
-	return id, nil
+	return id, remainingQuota, nil
 }

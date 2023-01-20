@@ -48,6 +48,11 @@ func (c *Controller) Shorten(fCtx *fiber.Ctx) error {
 		return fCtx.Status(fiber.StatusBadRequest).JSON(APIError{Message: "Invalid URL"})
 	}
 
+	// check for domain error
+	if !helpers.RemoveDomainError(body.URL) {
+		return fCtx.Status(fiber.StatusBadRequest).JSON(APIError{Message: "Can't do that :)"})
+	}
+
 	limit, err := c.IpStorage.GetTTLByIP(ctx, fCtx.IP())
 	if err != nil {
 		return fCtx.Status(fiber.StatusInternalServerError).JSON(APIError{Message: "cannot get TTL"})
@@ -64,11 +69,6 @@ func (c *Controller) Shorten(fCtx *fiber.Ctx) error {
 			return fCtx.Status(fiber.StatusServiceUnavailable).JSON(
 				APIError{Message: fmt.Sprintf("Rate limit exceeded, rate_limit_reset: %d", limit/time.Nanosecond/time.Minute)})
 		}
-	}
-
-	// check for domain error
-	if !helpers.RemoveDomainError(body.URL) {
-		return fCtx.Status(fiber.StatusServiceUnavailable).JSON(APIError{Message: "Can't do that :)"})
 	}
 
 	// enforce HTTPS, SSL
