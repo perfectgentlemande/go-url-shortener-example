@@ -40,7 +40,7 @@ func (s *Service) Resolve(ctx context.Context, id string) (string, error) {
 	return value, nil
 }
 
-func (s *Service) Shorten(ctx context.Context, ip, url string) (string, error) {
+func (s *Service) Shorten(ctx context.Context, ip, url, customShort string) (string, error) {
 	limit, err := s.ipStorage.GetTTLByIP(ctx, ip)
 	if err != nil {
 		return "", fmt.Errorf("cannot get TTL by IP: %w", err)
@@ -54,43 +54,43 @@ func (s *Service) Shorten(ctx context.Context, ip, url string) (string, error) {
 		}
 	} else if err == nil {
 		if valInt <= 0 {
-			return fCtx.Status(fiber.StatusServiceUnavailable).JSON(
-				APIError{Message: fmt.Sprintf("Rate limit exceeded, rate_limit_reset: %d", limit/time.Nanosecond/time.Minute)})
+			return "", ErrRateLimitExceeded
 		}
 	}
 
 	// check for domain error
-	if !helpers.RemoveDomainError(body.URL) {
-		return fCtx.Status(fiber.StatusServiceUnavailable).JSON(APIError{Message: "Can't do that :)"})
+	if !helpers.RemoveDomainError(url) {
+		return "", ErrCantDoThat
 	}
 
 	// enforce HTTPS, SSL
-	body.URL = helpers.EnforceHTTP(body.URL)
+	url = helpers.EnforceHTTP(url)
 
 	var id string
-	if body.CustomShort == "" {
+	if customShort == "" {
 		id = base62.Encode(rand.Uint64())
 	} else {
-		id = body.CustomShort
+		id = customShort
 	}
 
-	val, _ := c.UrlStorage.GetByID(ctx, id)
+	val, _ := s.urlStorage.GetByID(ctx, id)
 	if val != "" {
-		return fCtx.Status(fiber.StatusForbidden).JSON(APIError{Message: "URL Custom short is already in use"})
+		return "", ErrAlreadyInUse
 	}
 
 	if body.Expiry == 0 {
 		body.Expiry = 24
 	}
 
-	err = c.UrlStorage.SetByID(ctx, id, body.URL, body.Expiry*3600*time.Second)
+	err = s.urlStorage.SetByID(ctx, id, url, body.Expiry*3600*time.Second)
 	if err != nil {
 		return fCtx.Status(fiber.StatusInternalServerError).JSON(APIError{Message: "Cannot set URL by ID"})
 	}
 
-	remainingQuota, err := c.IpStorage.DecrAPIQuotaByIP(ctx, fCtx.IP())
+	remainingQuota, err := s.ipStorage.DecrAPIQuotaByIP(ctx, ip)
 	if err != nil {
-		return fCtx.Status(fiber.StatusInternalServerError).JSON(APIError{Message: "Cannot decrAPI quota"})
+		return "", fmt.Errorf("cannot decrement API quote by IP: %w", err)
 	}
 
+	return id, nil
 }
