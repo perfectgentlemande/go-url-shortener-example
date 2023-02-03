@@ -14,11 +14,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-func setupRoutes(app *fiber.App, c *api.Controller) {
-	app.Get("/:url", c.Resolve)
-	app.Post("/api/v1", c.Shorten)
-}
-
 func main() {
 	viper.SetConfigFile(".env")
 	err := viper.ReadInConfig()
@@ -65,7 +60,8 @@ func main() {
 
 	app := fiber.New()
 	app.Use(logger.New())
-	setupRoutes(app, c)
+	app.Get("/:url", c.Resolve)
+	app.Post("/api/v1", c.Shorten)
 	app.Listen(":3000") // + os.Getenv("APP_PORT"))
 	// base62EncodedString := helpers.Base62Encode(9999999)
 	// fmt.Println(base62EncodedString)
