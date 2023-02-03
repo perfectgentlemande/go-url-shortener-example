@@ -1,12 +1,12 @@
-package routes
+package api
 
 import (
 	"errors"
 	"os"
 	"time"
 
-	"github.com/perfectgentlemande/go-url-shortener-example/api/helpers"
-	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/service"
+	"github.com/perfectgentlemande/go-url-shortener-example/internal/helpers"
+	"github.com/perfectgentlemande/go-url-shortener-example/internal/service"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/gofiber/fiber/v2"

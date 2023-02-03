@@ -7,8 +7,8 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/perfectgentlemande/go-url-shortener-example/api/helpers"
-	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/base62"
+	"github.com/perfectgentlemande/go-url-shortener-example/internal/base62"
+	"github.com/perfectgentlemande/go-url-shortener-example/internal/helpers"
 )
 
 type Service struct {

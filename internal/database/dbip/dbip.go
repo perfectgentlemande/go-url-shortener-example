@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/service"
+	"github.com/perfectgentlemande/go-url-shortener-example/internal/service"
 )
 
 type Config struct {

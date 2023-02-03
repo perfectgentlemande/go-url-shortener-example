@@ -3,30 +3,30 @@ package main
 import (
 	"context"
 	"log"
-	"os"
 	"strconv"
 
-	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/database/dbip"
-	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/database/dburl"
-	"github.com/perfectgentlemande/go-url-shortener-example/api/routes"
+	"github.com/perfectgentlemande/go-url-shortener-example/internal/api"
+	"github.com/perfectgentlemande/go-url-shortener-example/internal/database/dbip"
+	"github.com/perfectgentlemande/go-url-shortener-example/internal/database/dburl"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/joho/godotenv"
+	"github.com/spf13/viper"
 )
 
-func setupRoutes(app *fiber.App, c *routes.Controller) {
+func setupRoutes(app *fiber.App, c *api.Controller) {
 	app.Get("/:url", c.Resolve)
 	app.Post("/api/v1", c.Shorten)
 }
 
 func main() {
-	err := godotenv.Load()
+	viper.SetConfigFile(".env")
+	err := viper.ReadInConfig()
 	if err != nil {
 		log.Fatal("Could not load environment file.")
 	}
 
-	addr, pass := os.Getenv("DB_ADDR"), os.Getenv("DB_PASS")
+	addr, pass := viper.GetString("DB_ADDR"), viper.GetString("DB_PASS")
 	urlStorage, err := dburl.NewDatabase(context.TODO(), &dburl.Config{
 		Addr:     addr,
 		Password: pass,
@@ -50,14 +50,14 @@ func main() {
 	}
 	defer ipStorage.Close()
 
-	defaultAPIQuotaStr := os.Getenv("API_QUOTA")
+	defaultAPIQuotaStr := viper.GetString("API_QUOTA")
 	defaultAPIQuota, err := strconv.Atoi(defaultAPIQuotaStr)
 	if err != nil {
 		log.Printf("wrong API_QUOTA: %d: %s", defaultAPIQuota, err)
 		return
 	}
 
-	c := &routes.Controller{
+	c := &api.Controller{
 		UrlStorage:      &urlStorage,
 		IpStorage:       &ipStorage,
 		DefaultAPIQuota: defaultAPIQuota,

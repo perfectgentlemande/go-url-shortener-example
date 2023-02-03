@@ -1,7 +1,7 @@
-package routes
+package api
 
 import (
-	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/service"
+	"github.com/perfectgentlemande/go-url-shortener-example/internal/service"
 )
 
 type Controller struct {

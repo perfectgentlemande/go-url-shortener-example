@@ -1,11 +1,11 @@
-package routes
+package api
 
 import (
 	"errors"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/perfectgentlemande/go-url-shortener-example/api/internal/service"
+	"github.com/perfectgentlemande/go-url-shortener-example/internal/service"
 )
 
 func (c *Controller) Resolve(fCtx *fiber.Ctx) error {
