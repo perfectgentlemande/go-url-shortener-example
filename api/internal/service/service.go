@@ -39,21 +39,21 @@ func (s *Service) Resolve(ctx context.Context, id string) (string, error) {
 	return value, nil
 }
 
-func (s *Service) Shorten(ctx context.Context, ip, url, customShort string, expiry time.Duration) (string, int64, error) {
+func (s *Service) Shorten(ctx context.Context, ip, url, customShort string, expiry time.Duration) (string, int64, time.Duration, error) {
 	limit, err := s.ipStorage.GetTTLByIP(ctx, ip)
 	if err != nil {
-		return "", 0, fmt.Errorf("cannot get TTL by IP: %w", err)
+		return "", 0, 0, fmt.Errorf("cannot get TTL by IP: %w", err)
 	}
 
 	valInt, err := s.ipStorage.GetRequestsCountByIP(ctx, ip)
 	if errors.Is(err, ErrNoSuchItem) {
 		err = s.ipStorage.SetAPIQuotaByIP(ctx, ip, s.defaultAPIQuota, 30*60*time.Second)
 		if err != nil {
-			return "", 0, fmt.Errorf("cannot set api quota for IP: %w", err)
+			return "", 0, 0, fmt.Errorf("cannot set api quota for IP: %w", err)
 		}
 	} else if err == nil {
 		if valInt <= 0 {
-			return "", 0, ErrRateLimitExceeded
+			return "", 0, 0, ErrRateLimitExceeded
 		}
 	}
 
@@ -67,9 +67,12 @@ func (s *Service) Shorten(ctx context.Context, ip, url, customShort string, expi
 		id = customShort
 	}
 
-	val, _ := s.urlStorage.GetByID(ctx, id)
+	val, err := s.urlStorage.GetByID(ctx, id)
+	if err != nil {
+		return "", 0, 0, fmt.Errorf("cannot check if ID exists: %w", err)
+	}
 	if val != "" {
-		return "", 0, ErrAlreadyInUse
+		return "", 0, 0, ErrAlreadyInUse
 	}
 
 	if expiry == 0 {
@@ -78,13 +81,13 @@ func (s *Service) Shorten(ctx context.Context, ip, url, customShort string, expi
 
 	err = s.urlStorage.SetByID(ctx, id, url, expiry*3600*time.Second)
 	if err != nil {
-		return "", 0, fmt.Errorf("cannot set URL by ID: %w")
+		return "", 0, 0, fmt.Errorf("cannot set URL by ID: %w", err)
 	}
 
 	remainingQuota, err := s.ipStorage.DecrAPIQuotaByIP(ctx, ip)
 	if err != nil {
-		return "", 0, fmt.Errorf("cannot decrement API quota by IP: %w", err)
+		return "", 0, 0, fmt.Errorf("cannot decrement API quota by IP: %w", err)
 	}
 
-	return id, remainingQuota, nil
+	return id, remainingQuota, limit, nil
 }
