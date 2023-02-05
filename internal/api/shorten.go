@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"log"
 	"os"
 	"time"
 
@@ -37,6 +38,7 @@ func (c *Controller) Shorten(fCtx *fiber.Ctx) error {
 	body := &request{}
 
 	if err := fCtx.BodyParser(&body); err != nil {
+		log.Printf("cannot parse JSON: %s\n", err)
 		return fCtx.Status(fiber.StatusBadRequest).JSON(APIError{Message: "cannot parse JSON"})
 	}
 
@@ -52,6 +54,7 @@ func (c *Controller) Shorten(fCtx *fiber.Ctx) error {
 
 	newID, remainingQuota, limit, err := c.srvc.Shorten(ctx, fCtx.IP(), body.URL, body.CustomShort, body.Expiry)
 	if err != nil {
+		log.Printf("cannot shorten URL: %s\n", err)
 		if errors.Is(err, service.ErrRateLimitExceeded) {
 			return fCtx.Status(fiber.StatusTooManyRequests).JSON(APIError{Message: "rate limit exceeded"})
 		}

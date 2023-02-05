@@ -56,7 +56,6 @@ func main() {
 	c := api.New(service.New(defaultAPIQuota, &urlStorage, &ipStorage))
 	app := fiber.New()
 	app.Use(logger.New())
-	app.Get("/ping", c.Ping)
 	app.Get("/:url", c.Resolve)
 	app.Post("/api/v1", c.Shorten)
 	app.Listen(":3000") // + os.Getenv("APP_PORT"))
