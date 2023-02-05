@@ -7,7 +7,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/perfectgentlemande/go-url-shortener-example/internal/base62"
+	"github.com/jxskiss/base62"
 	"github.com/perfectgentlemande/go-url-shortener-example/internal/helpers"
 )
 
@@ -62,7 +62,7 @@ func (s *Service) Shorten(ctx context.Context, ip, url, customShort string, expi
 
 	var id string
 	if customShort == "" {
-		id = base62.Encode(rand.Uint64())
+		id = string(base62.FormatUint(rand.Uint64()))
 	} else {
 		id = customShort
 	}
