@@ -68,7 +68,7 @@ func (s *Service) Shorten(ctx context.Context, ip, url, customShort string, expi
 	}
 
 	val, err := s.urlStorage.GetByID(ctx, id)
-	if err != nil {
+	if err != nil && !errors.Is(err, ErrNoSuchItem) {
 		return "", 0, 0, fmt.Errorf("cannot check if ID exists: %w", err)
 	}
 	if val != "" {
