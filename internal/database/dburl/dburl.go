@@ -20,11 +20,20 @@ type Database struct {
 }
 
 func NewDatabase(ctx context.Context, conf *Config) (Database, error) {
-	return Database{db: redis.NewClient(&redis.Options{
+	cli := redis.NewClient(&redis.Options{
 		Addr:     conf.Addr,
 		Password: conf.Password,
 		DB:       conf.No,
-	})}, nil
+	})
+
+	err := cli.Ping(ctx).Err()
+	if err != nil {
+		return Database{}, fmt.Errorf("cannot ping database: %w", err)
+	}
+
+	return Database{
+		db: cli,
+	}, nil
 }
 
 func (d *Database) GetByID(ctx context.Context, id string) (string, error) {
