@@ -8,6 +8,7 @@ import (
 	"github.com/perfectgentlemande/go-url-shortener-example/internal/api"
 	"github.com/perfectgentlemande/go-url-shortener-example/internal/database/dbip"
 	"github.com/perfectgentlemande/go-url-shortener-example/internal/database/dburl"
+	"github.com/perfectgentlemande/go-url-shortener-example/internal/service"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -52,14 +53,10 @@ func main() {
 		return
 	}
 
-	c := &api.Controller{
-		UrlStorage:      &urlStorage,
-		IpStorage:       &ipStorage,
-		DefaultAPIQuota: defaultAPIQuota,
-	}
-
+	c := api.New(service.New(defaultAPIQuota, &urlStorage, &ipStorage))
 	app := fiber.New()
 	app.Use(logger.New())
+	app.Get("/ping", c.Ping)
 	app.Get("/:url", c.Resolve)
 	app.Post("/api/v1", c.Shorten)
 	app.Listen(":3000") // + os.Getenv("APP_PORT"))

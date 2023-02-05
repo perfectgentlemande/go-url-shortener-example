@@ -6,10 +6,13 @@ import (
 )
 
 type Controller struct {
-	srvc            service.Service
-	UrlStorage      service.URLStorage
-	IpStorage       service.IPStorage
-	DefaultAPIQuota int
+	srvc *service.Service
+}
+
+func New(srvc *service.Service) *Controller {
+	return &Controller{
+		srvc: srvc,
+	}
 }
 
 func (c *Controller) Ping(fCtx *fiber.Ctx) error {
