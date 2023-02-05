@@ -3,7 +3,12 @@ Example of url shortener.
 
 Based on this: https://github.com/mahadevans87/short-url 
 Rebuilt into my own patterns and coding style for my own education.
-At the moment does not work, but I'll fix it soon.
+At the moment works, but some things needed:
+- another web-framework;
+- graceful shutdown;
+- custom logging;
+- dockerfile etc etc;
+- docker compose.
 
 ## Running
 
