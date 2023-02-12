@@ -13,12 +13,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// APIError defines model for APIError.
-type APIError struct {
-	// Error message
-	Message string `json:"message"`
-}
-
 type request struct {
 	URL         string        `json:"url"`
 	CustomShort string        `json:"short"`

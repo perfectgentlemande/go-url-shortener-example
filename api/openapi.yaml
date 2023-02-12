@@ -1,0 +1,99 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: go-url-shortener-example
+  description: URL shortener service
+  contact:
+    name: Artem Chaadaev
+    url: https://github.com/perfectgentlemande
+paths:
+  /api/v1:
+    post:
+      summary: Shortens your URL
+      description: |
+        Shortens your URL with generated ID or your custom short one.
+      operationId: shorten
+      requestBody:
+        description: Request with URL to be shortened
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShortenRequest'
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ShortenResponse'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+  /{id}:
+    get:
+      summary: Resolves your shortened link
+      description: |
+        Resolves your shortened link and redirects to it.
+      operationId: resolve
+      parameters:
+        - name: id
+          in: path
+          description: ID to be resolved
+          required: true
+          schema:
+            type: string
+      responses:
+        '301':
+          description: successful redirect
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+components:
+  schemas:
+    ShortenRequest:
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          description: URL to be shortened
+        short:
+          type: string
+          description: Custom-short identifier for URL
+        expiry:
+          type: integer
+          format: int64
+          description: Expiration value in hours
+    ShortenResponse:
+      allOf:
+        - $ref: '#/components/schemas/ShortenRequest'
+      properties:
+        rate_limit_remaining:
+          type: integer
+          format: int64
+          description: Shorten requests limit remaining
+        rate_limit_reset:
+          type: integer
+          format: int64
+          description: Time remaining to reset the limit
+    APIError:
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+          description: Error code
+        message:
+          type: string
+          description: Error message
