@@ -5,23 +5,24 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/perfectgentlemande/go-url-shortener-example/internal/service"
 )
 
-func (c *Controller) Resolve(fCtx *fiber.Ctx) error {
-	ctx := fCtx.Context()
-	url := fCtx.Params("url")
+func (c *Controller) Resolve(w http.ResponseWriter, r *http.Request, id string) {
+	ctx := r.Context()
 
-	value, err := c.srvc.Resolve(ctx, url)
+	value, err := c.srvc.Resolve(ctx, id)
 	if err != nil {
-		log.Printf("cannot resolve url: %s\n", err)
 		if errors.Is(err, service.ErrNoSuchItem) {
-			return fCtx.Status(fiber.StatusNotFound).JSON(APIError{Message: "short-url not found"})
+			log.Printf("short-url not found\n")
+			WriteError(ctx, w, http.StatusNotFound, "short-url not found")
+			return
 		}
 
-		return fCtx.Status(fiber.StatusInternalServerError).JSON(APIError{Message: "internal error"})
+		log.Printf("cannot resolve url: %s\n", err)
+		WriteError(ctx, w, http.StatusInternalServerError, "short-url not found")
+		return
 	}
 
-	return fCtx.Redirect(value, http.StatusMovedPermanently)
+	http.Redirect(w, r, value, http.StatusMovedPermanently)
 }

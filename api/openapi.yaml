@@ -62,6 +62,8 @@ components:
     ShortenRequest:
       required:
         - url
+        - short
+        - expiry
       properties:
         url:
           type: string
@@ -76,15 +78,18 @@ components:
     ShortenResponse:
       allOf:
         - $ref: '#/components/schemas/ShortenRequest'
-      properties:
-        rate_limit_remaining:
-          type: integer
-          format: int64
-          description: Shorten requests limit remaining
-        rate_limit_reset:
-          type: integer
-          format: int64
-          description: Time remaining to reset the limit
+        - required:
+            - rate_limit_remaining
+            - rate_limit_reset
+          properties:
+            rate_limit_remaining:
+              type: integer
+              format: int64
+              description: Shorten requests limit remaining
+            rate_limit_reset:
+              type: integer
+              format: int64
+              description: Time remaining to reset the limit
     APIError:
       required:
         - code

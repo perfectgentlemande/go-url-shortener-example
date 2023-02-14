@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
@@ -13,40 +14,25 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type request struct {
-	URL         string        `json:"url"`
-	CustomShort string        `json:"short"`
-	Expiry      time.Duration `json:"expiry"`
-}
+func (c *Controller) Shorten(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	shortenReq := &ShortenRequest{}
 
-type response struct {
-	URL             string        `json:"url"`
-	CustomShort     string        `json:"short"`
-	Expiry          time.Duration `json:"expiry"`
-	XRateRemaining  int           `json:"rate_limit"`
-	XRateLimitReset time.Duration `json:"rate_limit_reset"`
-}
-
-func (c *Controller) Shorten(fCtx *fiber.Ctx) error {
-	ctx := fCtx.Context()
-	body := &request{}
-
-	if err := fCtx.BodyParser(&body); err != nil {
-		log.Printf("cannot parse JSON: %s\n", err)
+	if err := fCtx.BodyParser(&shortenReq); err != nil {
 		return fCtx.Status(fiber.StatusBadRequest).JSON(APIError{Message: "cannot parse JSON"})
 	}
 
 	// check if the input is an actual URL
-	if !govalidator.IsURL(body.URL) {
+	if !govalidator.IsURL(shortenReq.Url) {
 		return fCtx.Status(fiber.StatusBadRequest).JSON(APIError{Message: "Invalid URL"})
 	}
 
 	// check for domain error
-	if !helpers.RemoveDomainError(body.URL) {
+	if !helpers.RemoveDomainError(shortenReq.Url) {
 		return fCtx.Status(fiber.StatusBadRequest).JSON(APIError{Message: "Can't do that :)"})
 	}
 
-	newID, remainingQuota, limit, err := c.srvc.Shorten(ctx, fCtx.IP(), body.URL, body.CustomShort, body.Expiry)
+	newID, remainingQuota, limit, err := c.srvc.Shorten(ctx, fCtx.IP(), shortenReq.Url, shortenReq.Short, shortenReq.Expiry)
 	if err != nil {
 		log.Printf("cannot shorten URL: %s\n", err)
 		if errors.Is(err, service.ErrRateLimitExceeded) {
@@ -59,12 +45,14 @@ func (c *Controller) Shorten(fCtx *fiber.Ctx) error {
 		return fCtx.Status(fiber.StatusInternalServerError).JSON(APIError{Message: "cannot shorten URL"})
 	}
 
-	resp := response{
-		URL:             body.URL,
-		CustomShort:     os.Getenv("DOMAIN") + "/" + newID,
-		Expiry:          body.Expiry,
-		XRateRemaining:  int(remainingQuota),
-		XRateLimitReset: limit / time.Nanosecond / time.Minute,
+	resp := ShortenResponse{
+		ShortenRequest: ShortenRequest{
+			Url:    shortenReq.Url,
+			Short:  os.Getenv("DOMAIN") + "/" + newID,
+			Expiry: shortenReq.Expiry,
+		},
+		RateLimitRemaining: int64(remainingQuota),
+		RateLimitReset:     int64(limit / time.Nanosecond / time.Minute),
 	}
 
 	return fCtx.Status(fiber.StatusOK).JSON(resp)

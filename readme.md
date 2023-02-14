@@ -23,6 +23,7 @@ And make sure that your `GOPATH/bin` path presents in `PATH` variable.
 Use this command to generate the `api.go` file:  
 - `oapi-codegen -package=api --generate=types,chi-server api/openapi.yaml > internal/api/api.go`  
 
+- `oapi-codegen -package=api --generate=types,chi-server api/petstore.yaml > internal/api/api2.go`
 ## Running
 
 ### Running

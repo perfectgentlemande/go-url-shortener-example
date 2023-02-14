@@ -23,10 +23,10 @@ type APIError struct {
 // ShortenRequest defines model for ShortenRequest.
 type ShortenRequest struct {
 	// Expiration value in hours
-	Expiry *int64 `json:"expiry,omitempty"`
+	Expiry int64 `json:"expiry"`
 
 	// Custom-short identifier for URL
-	Short *string `json:"short,omitempty"`
+	Short string `json:"short"`
 
 	// URL to be shortened
 	Url string `json:"url"`
@@ -36,6 +36,12 @@ type ShortenRequest struct {
 type ShortenResponse struct {
 	// Embedded struct due to allOf(#/components/schemas/ShortenRequest)
 	ShortenRequest `yaml:",inline"`
+	// Embedded fields due to inline allOf schema
+	// Shorten requests limit remaining
+	RateLimitRemaining int64 `json:"rate_limit_remaining"`
+
+	// Time remaining to reset the limit
+	RateLimitReset int64 `json:"rate_limit_reset"`
 }
 
 // ShortenJSONBody defines parameters for Shorten.
