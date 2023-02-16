@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/perfectgentlemande/go-url-shortener-example/internal/service"
-	"github.com/rs/zerolog/log"
 )
 
 type Controller struct {
@@ -28,12 +27,12 @@ func RespondWithJSON(w http.ResponseWriter, status int, payload interface{}) err
 func WriteError(ctx context.Context, w http.ResponseWriter, status int, message string) {
 	err := RespondWithJSON(w, status, APIError{Message: message})
 	if err != nil {
-		log.Printf("cannot write response: %w\n", err)
+		log.Printf("cannot write response: %s\n", err)
 	}
 }
 func WriteSuccessful(ctx context.Context, w http.ResponseWriter, payload interface{}) {
 	err := RespondWithJSON(w, http.StatusOK, payload)
 	if err != nil {
-		log.Printf("cannot write response: %w\n", err)
+		log.Printf("cannot write response: %s\n", err)
 	}
 }

@@ -38,7 +38,7 @@ func (c *Controller) Shorten(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newID, remainingQuota, limit, err := c.srvc.Shorten(ctx, fCtx.IP(), shortenReq.Url, shortenReq.Short, shortenReq.Expiry)
+	newID, remainingQuota, limit, err := c.srvc.Shorten(ctx, r.RemoteAddr, shortenReq.Url, shortenReq.Short, time.Duration(shortenReq.Expiry))
 	if err != nil {
 		log.Printf("cannot shorten URL: %s\n", err)
 		if errors.Is(err, service.ErrRateLimitExceeded) {
