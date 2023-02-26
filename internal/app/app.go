@@ -23,7 +23,7 @@ type Config struct {
 	APIQuota int
 }
 
-func newServer() (*http.Server, error) {
+func provideConfig() (*Config, error) {
 	viper.SetConfigFile(".env")
 	err := viper.ReadInConfig()
 	if err != nil {
@@ -37,8 +37,10 @@ func newServer() (*http.Server, error) {
 		APIQuota: viper.GetInt("API_QUOTA"),
 	}
 
-	fmt.Println(conf)
+	return &conf, nil
+}
 
+func provideURLStorage(conf *Config) (*dburl.Database, error) {
 	urlStorage, err := dburl.NewDatabase(context.TODO(), &dburl.Config{
 		Addr:     conf.DBAddr,
 		Password: conf.DBPass,
@@ -48,8 +50,11 @@ func newServer() (*http.Server, error) {
 		fmt.Println(err)
 		return nil, fmt.Errorf("cannot create URL Storage: %w", err)
 	}
-	defer urlStorage.Close()
 
+	return &urlStorage, nil
+}
+
+func provideIPStorage(conf *Config) (*dbip.Database, error) {
 	// Implement Rate limiting
 	ipStorage, err := dbip.NewDatabase(context.TODO(), &dbip.Config{
 		Addr:     conf.DBAddr,
@@ -59,9 +64,12 @@ func newServer() (*http.Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot create IP Storage: %w", err)
 	}
-	defer ipStorage.Close()
 
-	c := api.New(service.New(conf.APIQuota, &urlStorage, &ipStorage))
+	return &ipStorage, nil
+}
+
+func provideServer(conf *Config, dbURL *dburl.Database, dbIP *dbip.Database) (*http.Server, error) {
+	c := api.New(service.New(conf.APIQuota, dbURL, dbIP))
 	r := chi.NewRouter()
 
 	api.HandlerFromMux(c, r)
@@ -72,7 +80,7 @@ func newServer() (*http.Server, error) {
 	}, nil
 }
 
-func registerHooks(lifecycle fx.Lifecycle, srv *http.Server) {
+func registerHooks(lifecycle fx.Lifecycle, srv *http.Server, dbURL *dburl.Database, dbIP *dbip.Database) {
 	lifecycle.Append(
 		fx.Hook{
 			OnStart: func(ctx context.Context) error {
@@ -87,6 +95,9 @@ func registerHooks(lifecycle fx.Lifecycle, srv *http.Server) {
 				return nil
 			},
 			OnStop: func(ctx context.Context) error {
+				defer dbURL.Close()
+				defer dbIP.Close()
+
 				return srv.Shutdown(ctx)
 			},
 		},
@@ -94,6 +105,9 @@ func registerHooks(lifecycle fx.Lifecycle, srv *http.Server) {
 }
 
 var Module = fx.Options(
-	fx.Provide(newServer),
+	fx.Provide(provideConfig),
+	fx.Provide(provideURLStorage),
+	fx.Provide(provideIPStorage),
+	fx.Provide(provideServer),
 	fx.Invoke(registerHooks),
 )
