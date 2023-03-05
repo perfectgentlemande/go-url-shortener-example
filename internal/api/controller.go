@@ -6,7 +6,9 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/perfectgentlemande/go-url-shortener-example/internal/service"
+	"go.uber.org/fx"
 )
 
 type Config struct {
@@ -41,4 +43,36 @@ func WriteSuccessful(ctx context.Context, w http.ResponseWriter, payload interfa
 	if err != nil {
 		log.Printf("cannot write response: %s\n", err)
 	}
+}
+
+func Provide(lifecycle fx.Lifecycle, apiConf *Config, srvc *service.Service) (*http.Server, error) {
+	c := New(srvc, apiConf.Domain)
+	r := chi.NewRouter()
+
+	HandlerFromMux(c, r)
+	srv := &http.Server{
+		Handler: r,
+		Addr:    apiConf.AppPort,
+	}
+
+	lifecycle.Append(
+		fx.Hook{
+			OnStart: func(ctx context.Context) error {
+				go func() {
+					log.Println("Listening on:", srv.Addr)
+					err := srv.ListenAndServe()
+					if err != nil {
+						log.Println("Server listening error:", err)
+					}
+				}()
+
+				return nil
+			},
+			OnStop: func(ctx context.Context) error {
+				return srv.Shutdown(ctx)
+			},
+		},
+	)
+
+	return srv, nil
 }

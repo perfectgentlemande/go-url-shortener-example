@@ -1,12 +1,8 @@
 package app
 
 import (
-	"context"
 	"fmt"
-	"log"
-	"net/http"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/perfectgentlemande/go-url-shortener-example/internal/api"
 	"github.com/perfectgentlemande/go-url-shortener-example/internal/database/dbip"
 	"github.com/perfectgentlemande/go-url-shortener-example/internal/database/dburl"
@@ -52,44 +48,10 @@ func provideAllConfigs() (*dburl.Config, *dbip.Config, *api.Config, *service.Con
 	return conf.DBURL, conf.DBIP, conf.API, conf.Service, nil
 }
 
-func provideServer(apiConf *api.Config, srvc *service.Service) (*http.Server, error) {
-	c := api.New(srvc, apiConf.Domain)
-	r := chi.NewRouter()
-
-	api.HandlerFromMux(c, r)
-
-	return &http.Server{
-		Handler: r,
-		Addr:    apiConf.AppPort,
-	}, nil
-}
-
-func registerHooks(lifecycle fx.Lifecycle, srv *http.Server) {
-	lifecycle.Append(
-		fx.Hook{
-			OnStart: func(ctx context.Context) error {
-				go func() {
-					log.Println("Listening on:", srv.Addr)
-					err := srv.ListenAndServe()
-					if err != nil {
-						log.Println("Server listening error:", err)
-					}
-				}()
-
-				return nil
-			},
-			OnStop: func(ctx context.Context) error {
-				return srv.Shutdown(ctx)
-			},
-		},
-	)
-}
-
 var Module = fx.Options(
 	fx.Provide(provideAllConfigs),
 	fx.Provide(dburl.ProvideStorage),
 	fx.Provide(dbip.ProvideStorage),
 	fx.Provide(service.Provide),
-	fx.Provide(provideServer),
-	fx.Invoke(registerHooks),
+	fx.Invoke(api.Provide),
 )
