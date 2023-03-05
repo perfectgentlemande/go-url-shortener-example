@@ -52,8 +52,8 @@ func provideAllConfigs() (*dburl.Config, *dbip.Config, *api.Config, *service.Con
 	return conf.DBURL, conf.DBIP, conf.API, conf.Service, nil
 }
 
-func provideServer(apiConf *api.Config, srvcConf *service.Config, dbURL *dburl.Database, dbIP *dbip.Database) (*http.Server, error) {
-	c := api.New(service.New(srvcConf.APIQuota, dbURL, dbIP), apiConf.Domain)
+func provideServer(apiConf *api.Config, srvc *service.Service) (*http.Server, error) {
+	c := api.New(srvc, apiConf.Domain)
 	r := chi.NewRouter()
 
 	api.HandlerFromMux(c, r)
@@ -64,7 +64,7 @@ func provideServer(apiConf *api.Config, srvcConf *service.Config, dbURL *dburl.D
 	}, nil
 }
 
-func registerHooks(lifecycle fx.Lifecycle, srv *http.Server, dbURL *dburl.Database, dbIP *dbip.Database) {
+func registerHooks(lifecycle fx.Lifecycle, srv *http.Server) {
 	lifecycle.Append(
 		fx.Hook{
 			OnStart: func(ctx context.Context) error {
@@ -89,6 +89,7 @@ var Module = fx.Options(
 	fx.Provide(provideAllConfigs),
 	fx.Provide(dburl.ProvideStorage),
 	fx.Provide(dbip.ProvideStorage),
+	fx.Provide(service.Provide),
 	fx.Provide(provideServer),
 	fx.Invoke(registerHooks),
 )

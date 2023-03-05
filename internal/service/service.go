@@ -95,3 +95,7 @@ func (s *Service) Shorten(ctx context.Context, ip, url, customShort string, expi
 
 	return id, remainingQuota, limit, nil
 }
+
+func Provide(conf *Config, urlStorage URLStorage, ipStorage IPStorage) (*Service, error) {
+	return New(conf.APIQuota, urlStorage, ipStorage), nil
+}

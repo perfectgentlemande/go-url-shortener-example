@@ -63,7 +63,7 @@ func (d *Database) Close() error {
 	return d.db.Close()
 }
 
-func ProvideStorage(conf *Config, lifecycle fx.Lifecycle) (*Database, error) {
+func ProvideStorage(conf *Config, lifecycle fx.Lifecycle) (service.URLStorage, error) {
 	urlStorage, err := NewDatabase(context.TODO(), conf)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create URL Storage: %w", err)
