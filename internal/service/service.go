@@ -11,6 +11,10 @@ import (
 	"github.com/perfectgentlemande/go-url-shortener-example/internal/helpers"
 )
 
+type Config struct {
+	APIQuota int
+}
+
 type Service struct {
 	defaultAPIQuota int
 	urlStorage      URLStorage

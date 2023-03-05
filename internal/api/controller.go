@@ -9,11 +9,17 @@ import (
 	"github.com/perfectgentlemande/go-url-shortener-example/internal/service"
 )
 
-type Controller struct {
-	srvc *service.Service
+type Config struct {
+	AppPort string
+	Domain  string
 }
 
-func New(srvc *service.Service) *Controller {
+type Controller struct {
+	srvc   *service.Service
+	domain string
+}
+
+func New(srvc *service.Service, domain string) *Controller {
 	return &Controller{
 		srvc: srvc,
 	}

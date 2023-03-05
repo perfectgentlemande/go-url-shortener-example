@@ -32,7 +32,7 @@ func (c *Controller) Shorten(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check for domain error
-	if !helpers.RemoveDomainError(shortenReq.Url) {
+	if !helpers.RemoveDomainError(shortenReq.Url, c.domain) {
 		log.Printf("can't do that :)\n")
 		WriteError(ctx, w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 		return

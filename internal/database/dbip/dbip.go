@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-redis/redis/v8"
 	"github.com/perfectgentlemande/go-url-shortener-example/internal/service"
+	"go.uber.org/fx"
 )
 
 type Config struct {
@@ -92,4 +93,20 @@ func (d *Database) IncrRequestCounter(ctx context.Context) error {
 
 func (d *Database) Close() error {
 	return d.db.Close()
+}
+
+func ProvideStorage(conf *Config, lifecycle fx.Lifecycle) (*Database, error) {
+	// Implement Rate limiting
+	ipStorage, err := NewDatabase(context.TODO(), conf)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create IP Storage: %w", err)
+	}
+	lifecycle.Append(fx.Hook{
+		OnStop: func(ctx context.Context) error {
+			fmt.Println("ip storage closed")
+			return ipStorage.Close()
+		},
+	})
+
+	return &ipStorage, nil
 }
