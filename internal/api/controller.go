@@ -45,9 +45,33 @@ func WriteSuccessful(ctx context.Context, w http.ResponseWriter, payload interfa
 	}
 }
 
-func Provide(lifecycle fx.Lifecycle, apiConf *Config, srvc *service.Service) (*http.Server, error) {
+type loggerCtxKey struct{}
+
+func WithLogger(ctx context.Context, log service.Logger) context.Context {
+	return context.WithValue(ctx, loggerCtxKey{}, log)
+}
+func GetLogger(ctx context.Context) service.Logger {
+	// no checks because Provide woill not run without logger
+	return ctx.Value(loggerCtxKey{}).(service.Logger)
+}
+
+func newLoggingMiddleware(log service.Logger) func(http.Handler) http.Handler {
+	return func(handler http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			nextLog := log.WithFields(
+				map[string]interface{}{
+					"method": r.Method,
+					"path":   r.URL.Path,
+				})
+			handler.ServeHTTP(w, r.WithContext(WithLogger(r.Context(), nextLog)))
+		})
+	}
+}
+
+func Provide(lifecycle fx.Lifecycle, apiConf *Config, srvc *service.Service, log service.Logger) (*http.Server, error) {
 	c := New(srvc, apiConf.Domain)
 	r := chi.NewRouter()
+	r.Use(newLoggingMiddleware(log))
 
 	HandlerFromMux(c, r)
 	srv := &http.Server{
@@ -59,10 +83,10 @@ func Provide(lifecycle fx.Lifecycle, apiConf *Config, srvc *service.Service) (*h
 		fx.Hook{
 			OnStart: func(ctx context.Context) error {
 				go func() {
-					log.Println("Listening on:", srv.Addr)
+					log.WithField("addr", srv.Addr).Info("listening")
 					err := srv.ListenAndServe()
 					if err != nil {
-						log.Println("Server listening error:", err)
+						log.WithError(err).Error("server listening error")
 					}
 				}()
 

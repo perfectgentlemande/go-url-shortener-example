@@ -6,6 +6,7 @@ import (
 	"github.com/perfectgentlemande/go-url-shortener-example/internal/api"
 	"github.com/perfectgentlemande/go-url-shortener-example/internal/database/dbip"
 	"github.com/perfectgentlemande/go-url-shortener-example/internal/database/dburl"
+	"github.com/perfectgentlemande/go-url-shortener-example/internal/logger"
 	"github.com/perfectgentlemande/go-url-shortener-example/internal/service"
 	"github.com/spf13/viper"
 	"go.uber.org/fx"
@@ -16,13 +17,14 @@ type Config struct {
 	DBIP    *dbip.Config
 	API     *api.Config
 	Service *service.Config
+	Logger  *logger.Config
 }
 
-func provideAllConfigs() (*dburl.Config, *dbip.Config, *api.Config, *service.Config, error) {
+func provideAllConfigs() (*dburl.Config, *dbip.Config, *api.Config, *service.Config, *logger.Config, error) {
 	viper.SetConfigFile(".env")
 	err := viper.ReadInConfig()
 	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("could not load environment file: %w", err)
+		return nil, nil, nil, nil, nil, fmt.Errorf("could not load environment file: %w", err)
 	}
 
 	conf := Config{
@@ -43,13 +45,18 @@ func provideAllConfigs() (*dburl.Config, *dbip.Config, *api.Config, *service.Con
 		Service: &service.Config{
 			APIQuota: viper.GetInt("API_QUOTA"),
 		},
+		Logger: &logger.Config{
+			Encoder: viper.GetString("LOG_ENCODER"),
+			Level:   viper.GetString("LOG_LEVEL"),
+		},
 	}
 
-	return conf.DBURL, conf.DBIP, conf.API, conf.Service, nil
+	return conf.DBURL, conf.DBIP, conf.API, conf.Service, conf.Logger, nil
 }
 
 var Module = fx.Options(
 	fx.Provide(provideAllConfigs),
+	fx.Provide(logger.ProvideLogger),
 	fx.Provide(dburl.ProvideStorage),
 	fx.Provide(dbip.ProvideStorage),
 	fx.Provide(service.Provide),

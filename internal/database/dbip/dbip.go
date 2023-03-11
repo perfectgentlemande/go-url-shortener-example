@@ -95,7 +95,7 @@ func (d *Database) Close() error {
 	return d.db.Close()
 }
 
-func ProvideStorage(conf *Config, lifecycle fx.Lifecycle) (service.IPStorage, error) {
+func ProvideStorage(ctx context.Context, conf *Config, lifecycle fx.Lifecycle) (service.IPStorage, error) {
 	// Implement Rate limiting
 	ipStorage, err := NewDatabase(context.TODO(), conf)
 	if err != nil {
