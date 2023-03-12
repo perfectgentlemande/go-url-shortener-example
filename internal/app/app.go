@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/perfectgentlemande/go-url-shortener-example/internal/api"
 	"github.com/perfectgentlemande/go-url-shortener-example/internal/database/dbip"
@@ -10,6 +11,9 @@ import (
 	"github.com/perfectgentlemande/go-url-shortener-example/internal/service"
 	"github.com/spf13/viper"
 	"go.uber.org/fx"
+	"go.uber.org/fx/fxevent"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type Config struct {
@@ -54,7 +58,13 @@ func provideAllConfigs() (*dburl.Config, *dbip.Config, *api.Config, *service.Con
 	return conf.DBURL, conf.DBIP, conf.API, conf.Service, conf.Logger, nil
 }
 
+// I don't know how to insert anything apart from zap into this part
+func addDefaultJSONLoggerForGoFx() fxevent.Logger {
+	return &fxevent.ZapLogger{Logger: zap.New(zapcore.NewCore(zapcore.NewJSONEncoder(zap.NewDevelopmentEncoderConfig()), os.Stdout, zap.DebugLevel))}
+}
+
 var Module = fx.Options(
+	fx.WithLogger(addDefaultJSONLoggerForGoFx),
 	fx.Provide(provideAllConfigs),
 	fx.Provide(logger.ProvideLogger),
 	fx.Provide(dburl.ProvideStorage),
