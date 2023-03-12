@@ -20,21 +20,16 @@ type Database struct {
 	db *redis.Client
 }
 
-func NewDatabase(ctx context.Context, conf *Config) (Database, error) {
+func NewDatabase(conf *Config) Database {
 	cli := redis.NewClient(&redis.Options{
 		Addr:     conf.Addr,
 		Password: conf.Password,
 		DB:       conf.No,
 	})
 
-	err := cli.Ping(ctx).Err()
-	if err != nil {
-		return Database{}, fmt.Errorf("cannot ping database: %w", err)
-	}
-
 	return Database{
 		db: cli,
-	}, nil
+	}
 }
 
 func (d *Database) GetByID(ctx context.Context, id string) (string, error) {
@@ -59,16 +54,22 @@ func (d *Database) SetByID(ctx context.Context, id, url string, expiration time.
 	return nil
 }
 
+func (d *Database) Ping(ctx context.Context) error {
+	return d.db.Ping(ctx).Err()
+}
+
 func (d *Database) Close() error {
 	return d.db.Close()
 }
 
-func ProvideStorage(ctx context.Context, conf *Config, lifecycle fx.Lifecycle) (service.URLStorage, error) {
-	urlStorage, err := NewDatabase(ctx, conf)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create URL Storage: %w", err)
-	}
+func ProvideStorage(conf *Config, lifecycle fx.Lifecycle) (service.URLStorage, error) {
+	urlStorage := NewDatabase(conf)
+
 	lifecycle.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			fmt.Println("ping will be done")
+			return urlStorage.Ping(ctx)
+		},
 		OnStop: func(ctx context.Context) error {
 			fmt.Println("url storage closed")
 			return urlStorage.Close()

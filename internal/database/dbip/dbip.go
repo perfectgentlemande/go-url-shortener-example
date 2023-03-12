@@ -21,21 +21,16 @@ type Database struct {
 	db *redis.Client
 }
 
-func NewDatabase(ctx context.Context, conf *Config) (Database, error) {
+func NewDatabase(conf *Config) Database {
 	cli := redis.NewClient(&redis.Options{
 		Addr:     conf.Addr,
 		Password: conf.Password,
 		DB:       conf.No,
 	})
 
-	err := cli.Ping(ctx).Err()
-	if err != nil {
-		return Database{}, fmt.Errorf("cannot ping database: %w", err)
-	}
-
 	return Database{
 		db: cli,
-	}, nil
+	}
 }
 
 func (d *Database) GetRequestsCountByIP(ctx context.Context, ip string) (int, error) {
@@ -91,17 +86,22 @@ func (d *Database) IncrRequestCounter(ctx context.Context) error {
 	return nil
 }
 
+func (d *Database) Ping(ctx context.Context) error {
+	return d.db.Ping(ctx).Err()
+}
 func (d *Database) Close() error {
 	return d.db.Close()
 }
 
-func ProvideStorage(ctx context.Context, conf *Config, lifecycle fx.Lifecycle) (service.IPStorage, error) {
+func ProvideStorage(conf *Config, lifecycle fx.Lifecycle) (service.IPStorage, error) {
 	// Implement Rate limiting
-	ipStorage, err := NewDatabase(context.TODO(), conf)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create IP Storage: %w", err)
-	}
+	ipStorage := NewDatabase(conf)
+
 	lifecycle.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			fmt.Println("ping will be done")
+			return ipStorage.Ping(ctx)
+		},
 		OnStop: func(ctx context.Context) error {
 			fmt.Println("ip storage closed")
 			return ipStorage.Close()

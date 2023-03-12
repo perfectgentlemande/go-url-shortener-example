@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"context"
 	"fmt"
 	"os"
 
@@ -126,7 +125,7 @@ func (l *Logger) Warn(message interface{}) {
 	l.log.Warn(fmt.Sprintf("%v", message))
 }
 
-func ProvideLogger(ctx context.Context, conf *Config) (service.Logger, error) {
+func ProvideLogger(conf *Config) (service.Logger, error) {
 	log, err := New(conf)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create logger: %w", err)

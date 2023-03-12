@@ -11,6 +11,8 @@ func (c *Controller) Resolve(w http.ResponseWriter, r *http.Request, id string) 
 	ctx := r.Context()
 	log := GetLogger(ctx)
 
+	log.Info("resolve handler")
+
 	value, err := c.srvc.Resolve(ctx, id)
 	if err != nil {
 		if errors.Is(err, service.ErrNoSuchItem) {

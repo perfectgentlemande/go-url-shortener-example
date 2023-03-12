@@ -18,6 +18,8 @@ func (c *Controller) Shorten(w http.ResponseWriter, r *http.Request) {
 	log := GetLogger(ctx)
 	shortenReq := &ShortenRequest{}
 
+	log.Info("shorten handler")
+
 	if err := json.NewDecoder(r.Body).Decode(&shortenReq); err != nil {
 		log.WithError(err).Debug("wrong user data")
 		WriteError(ctx, w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
