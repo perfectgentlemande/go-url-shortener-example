@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-redis/redis/v8"
 	"github.com/perfectgentlemande/go-url-shortener-example/internal/service"
+	"go.uber.org/fx"
 )
 
 type Config struct {
@@ -20,21 +21,16 @@ type Database struct {
 	db *redis.Client
 }
 
-func NewDatabase(ctx context.Context, conf *Config) (Database, error) {
+func NewDatabase(conf *Config) Database {
 	cli := redis.NewClient(&redis.Options{
 		Addr:     conf.Addr,
 		Password: conf.Password,
 		DB:       conf.No,
 	})
 
-	err := cli.Ping(ctx).Err()
-	if err != nil {
-		return Database{}, fmt.Errorf("cannot ping database: %w", err)
-	}
-
 	return Database{
 		db: cli,
-	}, nil
+	}
 }
 
 func (d *Database) GetRequestsCountByIP(ctx context.Context, ip string) (int, error) {
@@ -90,6 +86,25 @@ func (d *Database) IncrRequestCounter(ctx context.Context) error {
 	return nil
 }
 
+func (d *Database) Ping(ctx context.Context) error {
+	return d.db.Ping(ctx).Err()
+}
 func (d *Database) Close() error {
 	return d.db.Close()
+}
+
+func ProvideStorage(conf *Config, lifecycle fx.Lifecycle) (service.IPStorage, error) {
+	// Implement Rate limiting
+	ipStorage := NewDatabase(conf)
+
+	lifecycle.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			return ipStorage.Ping(ctx)
+		},
+		OnStop: func(ctx context.Context) error {
+			return ipStorage.Close()
+		},
+	})
+
+	return &ipStorage, nil
 }

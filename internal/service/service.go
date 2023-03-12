@@ -11,6 +11,10 @@ import (
 	"github.com/perfectgentlemande/go-url-shortener-example/internal/helpers"
 )
 
+type Config struct {
+	APIQuota int
+}
+
 type Service struct {
 	defaultAPIQuota int
 	urlStorage      URLStorage
@@ -90,4 +94,8 @@ func (s *Service) Shorten(ctx context.Context, ip, url, customShort string, expi
 	}
 
 	return id, remainingQuota, limit, nil
+}
+
+func Provide(conf *Config, urlStorage URLStorage, ipStorage IPStorage) (*Service, error) {
+	return New(conf.APIQuota, urlStorage, ipStorage), nil
 }

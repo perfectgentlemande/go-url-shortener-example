@@ -5,8 +5,6 @@ Based on this: https://github.com/mahadevans87/short-url
 Rebuilt into my own patterns and coding style for my own education.
 At the moment works, but some things needed:
 - graceful shutdown;
-- remove all routing/server logic from main;
-- custom logging;
 - dockerfile etc etc;
 - docker compose.
 
