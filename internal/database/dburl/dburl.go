@@ -67,11 +67,9 @@ func ProvideStorage(conf *Config, lifecycle fx.Lifecycle) (service.URLStorage, e
 
 	lifecycle.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			fmt.Println("ping will be done")
 			return urlStorage.Ping(ctx)
 		},
 		OnStop: func(ctx context.Context) error {
-			fmt.Println("url storage closed")
 			return urlStorage.Close()
 		},
 	})

@@ -71,6 +71,7 @@ func NewDefaultLogger() service.Logger {
 func (l *Logger) WithField(key string, value interface{}) service.Logger {
 	return service.Logger(&Logger{
 		log: l.log.With(zapcore.Field{
+			Type:      zapcore.ReflectType,
 			Key:       key,
 			Interface: value,
 		}),
@@ -79,6 +80,7 @@ func (l *Logger) WithField(key string, value interface{}) service.Logger {
 func (l *Logger) WithError(err error) service.Logger {
 	return service.Logger(&Logger{
 		log: l.log.With(zapcore.Field{
+			Type:      zapcore.ErrorType,
 			Key:       "error",
 			Interface: err,
 		}),
@@ -96,12 +98,14 @@ func (l *Logger) WithFields(fields map[string]interface{}) service.Logger {
 
 	newLog := &Logger{
 		log: l.log.With(zapcore.Field{
+			Type:      zapcore.ReflectType,
 			Key:       fieldsSlice[0],
 			Interface: fields[fieldsSlice[0]]}),
 	}
 
 	for i := 1; i < len(fieldsSlice); i++ {
 		newLog.log = newLog.log.With(zapcore.Field{
+			Type:      zapcore.ReflectType,
 			Key:       fieldsSlice[i],
 			Interface: fields[fieldsSlice[i]]})
 	}

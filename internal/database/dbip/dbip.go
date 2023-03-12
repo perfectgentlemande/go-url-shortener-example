@@ -99,11 +99,9 @@ func ProvideStorage(conf *Config, lifecycle fx.Lifecycle) (service.IPStorage, er
 
 	lifecycle.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			fmt.Println("ping will be done")
 			return ipStorage.Ping(ctx)
 		},
 		OnStop: func(ctx context.Context) error {
-			fmt.Println("ip storage closed")
 			return ipStorage.Close()
 		},
 	})
